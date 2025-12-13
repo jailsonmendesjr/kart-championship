@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Ambiente Virtual
+venv/
+.env
+
+# Banco de Dados Local (Não sobe, pois usaremos Postgres na VPS)
+db.sqlite3
+
+# VS Code / Mac
+.vscode/
+.DS_Store
+
+# Static files coletados
+staticfiles/

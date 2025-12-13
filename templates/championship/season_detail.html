@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ season.name }} - Classificação{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                {{ season.name }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">Classificação Atualizada</p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'season_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Voltar
+            </a>
+        </div>
+    </div>
+    
+    <div class="mb-10">
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Calendário de Etapas</h3>
+            <span class="text-xs text-gray-500 md:hidden">Deslize para ver →</span>
+        </div>
+        
+        <div class="flex overflow-x-auto pb-4 space-x-4 snap-x snap-mandatory scrollbar-hide">
+            {% for round in season.rounds.all %}
+            <a href="{% url 'round_detail' season.id round.id %}" 
+               class="flex-none w-11/12 sm:w-80 snap-center relative rounded-lg border border-gray-300 bg-white px-5 py-4 shadow-sm flex items-center space-x-3 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hover:shadow-md transition-all">
+                <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold border border-red-200">
+                        {{ round.order }}
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <span class="absolute inset-0" aria-hidden="true"></span>
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ round.name }}</p>
+                    <p class="text-xs text-gray-500 truncate flex items-center mt-1">
+                        <svg class="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ round.date|date:"d/m" }} <span class="mx-1">•</span> {{ round.location }}
+                    </p>
+                </div>
+                <div>
+                    <svg class="h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </a>
+            {% empty %}
+            <div class="w-full text-center py-6 border-2 border-dashed border-gray-300 rounded-lg flex-none snap-center">
+                <p class="text-gray-500">Nenhuma etapa cadastrada ainda.</p>
+            </div>
+            {% endfor %}
+            <div class="flex-none w-2"></div>
+        </div>
+    </div>
+
+    <style>
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+
+    <div x-data="{ tab: 'pilotos' }"> 
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('pilotos')" id="tab-pilotos" class="border-red-500 text-red-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ranking de Pilotos
+                </button>
+                <button onclick="switchTab('equipes')" id="tab-equipes" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ranking de Equipes
+                </button>
+            </nav>
+        </div>
+
+        <div id="content-pilotos" class="mt-8 flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">Pos</th>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Piloto</th>
+                                    <th scope="col" class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipe</th>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <span class="md:hidden">Pts</span><span class="hidden md:inline">Pontos</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for driver in drivers_ranking %}
+                                <tr>
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-900 font-bold w-6">{{ driver.position }}º</span>
+                                            
+                                            <span class="ml-2 text-xs font-medium">
+                                                {% if driver.change > 0 %}
+                                                    <span class="text-green-600 flex items-center" title="Subiu {{ driver.change }} posições">
+                                                        ▲ {{ driver.change }}
+                                                    </span>
+                                                {% elif driver.change < 0 %}
+                                                    <span class="text-red-600 flex items-center" title="Caiu posições">
+                                                        ▼ {{ driver.change|stringformat:"+d"|slice:"1:" }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-gray-300 font-bold ml-1">-</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-2.5 w-2.5 rounded-full mr-2 md:hidden flex-shrink-0" style="background-color: {{ driver.team.primary_color }};"></div>
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900">{{ driver.driver.name }}</div>
+                                                <div class="text-xs text-gray-500 md:hidden flex items-center mt-0.5">
+                                                    {{ driver.team.name }} • #{{ driver.car_number|default:"--" }}
+                                                </div>
+                                                <div class="hidden md:block text-xs text-gray-500">
+                                                    #{{ driver.car_number|default:"--" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border-l-4" style="border-color: {{ driver.team.primary_color }}">
+                                            {{ driver.team.name }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
+                                        {{ driver.total_points }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Nenhum piloto pontuou ainda.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-equipes" class="mt-8 flex flex-col hidden">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">Pos</th>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipe</th>
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <span class="md:hidden">Pts</span><span class="hidden md:inline">Pontos Totais</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for team in teams_ranking %}
+                                <tr>
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-900 font-bold w-6">{{ team.position }}º</span>
+                                            
+                                            <span class="ml-2 text-xs font-medium">
+                                                {% if team.change > 0 %}
+                                                    <span class="text-green-600 flex items-center">▲ {{ team.change }}</span>
+                                                {% elif team.change < 0 %}
+                                                    <span class="text-red-600 flex items-center">▼ {{ team.change|stringformat:"+d"|slice:"1:" }}</span>
+                                                {% else %}
+                                                    <span class="text-gray-300 font-bold ml-1">-</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-6 w-6 rounded-full mr-3 shadow-sm border border-gray-200" style="background-color: {{ team.primary_color }};"></div>
+                                            <div class="text-sm font-medium text-gray-900">{{ team.name }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
+                                        {{ team.total_points }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Nenhuma equipe pontuou ainda.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        document.getElementById('content-pilotos').classList.add('hidden');
+        document.getElementById('content-equipes').classList.add('hidden');
+        document.getElementById('tab-pilotos').classList.remove('border-red-500', 'text-red-600');
+        document.getElementById('tab-pilotos').classList.add('border-transparent', 'text-gray-500');
+        document.getElementById('tab-equipes').classList.remove('border-red-500', 'text-red-600');
+        document.getElementById('tab-equipes').classList.add('border-transparent', 'text-gray-500');
+
+        document.getElementById('content-' + tabName).classList.remove('hidden');
+        document.getElementById('tab-' + tabName).classList.add('border-red-500', 'text-red-600');
+        document.getElementById('tab-' + tabName).classList.remove('border-transparent', 'text-gray-500');
+    }
+</script>
+{% endblock %}

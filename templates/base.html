@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kart Championship{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                kart: {
+                  dark: '#1a1a1a',
+                  red: '#dc2626',
+                }
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-900">
+
+    <nav class="bg-gray-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold uppercase tracking-wider">
+                        Kart Champ 🏁
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="/" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">Temporadas</a>
+                        <a href="#" class="hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">Login Admin</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto py-6 sm:px-6 lg:px-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-gray-900 text-gray-400 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            <p>&copy; 2025 Kart Amateur Championship. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
