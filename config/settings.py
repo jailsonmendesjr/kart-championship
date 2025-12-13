@@ -25,12 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 # Lê do ambiente ou usa um valor padrão inseguro (só pra dev)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-chave-padrao-dev')
-
-# Debug é True localmente, mas False em produção (se não tiver a variável definida)
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Permite o domínio do EasyPanel (ex: .easypanel.host) e localhost
-ALLOWED_HOSTS = ['*'] # Para o MVP no EasyPanel, '*' facilita. Depois restringimos.
+# 3. Adicione o domínio de produção aqui. O domínio completo da VPS.
+HOSTS = os.environ.get('HOST', '127.0.0.1').split(',')
+ALLOWED_HOSTS = ['*'] if DEBUG else HOSTS
+
+# Se você for usar HTTPS, adicione também:
+CSRF_TRUSTED_ORIGINS = ['https://' + h for h in HOSTS if h != '*']
 
 
 # Application definition
