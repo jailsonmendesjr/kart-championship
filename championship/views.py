@@ -1,11 +1,8 @@
+import json
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from .models import Season, DriverTeamSeason, Team, Round
-import json
-from django.shortcuts import render, get_object_or_404
-from .models import Season, DriverTeamSeason, Round
-
 
 def season_list(request):
     seasons = Season.objects.all().order_by('-year')
@@ -33,7 +30,6 @@ def calculate_standings(season, exclude_last_round=False):
     ).order_by('-total_points', 'driver__name')
 
     # Transforma em lista e atribui a posição (1º, 2º, 3º...) manualmente
-    # Isso é necessário para sabermos a posição exata mesmo com empates
     drivers_list = list(drivers)
     for index, entry in enumerate(drivers_list):
         entry.position = index + 1
@@ -71,11 +67,9 @@ def season_detail(request, season_id):
         for driver in current_drivers:
             old_pos = prev_drivers_map.get(driver.driver.id)
             if old_pos:
-                # Se eu era 5º e virei 3º: 5 - 3 = 2 (Positivo = Subiu)
-                # Se eu era 1º e virei 4º: 1 - 4 = -3 (Negativo = Desceu)
                 driver.change = old_pos - driver.position
             else:
-                driver.change = 0 # Novo no ranking ou sem dados anteriores
+                driver.change = 0 
 
         # Compara Equipes
         for team in current_teams:
@@ -110,7 +104,7 @@ def round_detail(request, season_id, round_id):
     return render(request, 'championship/round_detail.html', context)
 
 
-# --- Função Auxiliar (Não é uma view, serve para ajudar a view) ---
+# --- Função Auxiliar para Performance ---
 def get_driver_performance_data(season, driver_id):
     if not driver_id:
         return None
@@ -127,9 +121,9 @@ def get_driver_performance_data(season, driver_id):
     rounds = season.rounds.all().order_by('order')
     
     # Prepara listas para os gráficos
-    labels = [] # Nomes das etapas (ex: R1, R2)
-    points_cumulative = [] # Pontos acumulados [25, 43, 58...]
-    positions = [] # Posições de chegada [1, 3, 2...]
+    labels = [] 
+    points_cumulative = [] 
+    positions = [] 
     
     current_total = 0
     total_fast_laps = 0
@@ -152,7 +146,7 @@ def get_driver_performance_data(season, driver_id):
             if result.position < best_pos:
                 best_pos = result.position
         else:
-            # Se não correu, mantém o total anterior e marca posição como null (gráfico ignora)
+            # Se não correu, mantém o total anterior e marca posição como null
             points_cumulative.append(current_total)
             positions.append(None) 
 
@@ -164,20 +158,20 @@ def get_driver_performance_data(season, driver_id):
         'total_points': current_total,
         'best_position': best_pos if best_pos != 999 else '-',
         'fast_laps': total_fast_laps,
-        'labels': json.dumps(labels), # Para o JS
-        'data_points': json.dumps(points_cumulative), # Para o JS
-        'data_positions': json.dumps(positions), # Para o JS
+        'labels': json.dumps(labels), 
+        'data_points': json.dumps(points_cumulative), 
+        'data_positions': json.dumps(positions), 
     }
     return stats
 
-# --- A View Principal ---
+# --- A View Principal de Performance ---
 def performance_analysis(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
     
     # Pega todos os pilotos inscritos para preencher o Dropdown
     drivers_list = DriverTeamSeason.objects.filter(season=season).select_related('driver').order_by('driver__name')
     
-    # Pega IDs da URL (ex: ?p1=1&p2=5)
+    # Pega IDs da URL
     p1_id = request.GET.get('p1')
     p2_id = request.GET.get('p2')
     
