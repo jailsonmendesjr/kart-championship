@@ -11,17 +11,13 @@ def season_list(request):
 def calculate_standings(season, exclude_last_round=False):
     """
     Função auxiliar que calcula o ranking.
-    Se exclude_last_round=True, ignora os pontos da última etapa realizada.
     """
-    # Identifica quais etapas considerar
     rounds = season.rounds.all().order_by('order')
     if exclude_last_round and rounds.exists():
-        # Pega todas as etapas menos a última
         last_round = rounds.last()
         rounds = rounds.exclude(pk=last_round.pk)
     
-    # --- Ranking de Pilotos ---
-    # Soma pontos apenas das etapas filtradas
+    # Ranking de Pilotos
     drivers = DriverTeamSeason.objects.filter(season=season).annotate(
         total_points=Coalesce(
             Sum('results__points', filter=Q(results__round__in=rounds)), 
@@ -29,12 +25,11 @@ def calculate_standings(season, exclude_last_round=False):
         )
     ).order_by('-total_points', 'driver__name')
 
-    # Transforma em lista e atribui a posição (1º, 2º, 3º...) manualmente
     drivers_list = list(drivers)
     for index, entry in enumerate(drivers_list):
         entry.position = index + 1
         
-    # --- Ranking de Equipes ---
+    # Ranking de Equipes
     teams = Team.objects.filter(season_drivers__season=season).distinct().annotate(
         total_points=Coalesce(
             Sum('season_drivers__results__points', filter=Q(season_drivers__results__round__in=rounds)),
@@ -52,34 +47,21 @@ def season_detail(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
     rounds_count = season.rounds.count()
 
-    # 1. Calcula o Ranking Atual (Completo)
     current_drivers, current_teams = calculate_standings(season, exclude_last_round=False)
 
-    # 2. Se houver mais de 1 etapa, calcula o Ranking Anterior para comparar
     if rounds_count > 1:
         prev_drivers, prev_teams = calculate_standings(season, exclude_last_round=True)
-        
-        # Cria dicionários para busca rápida: { id_do_piloto: posicao_anterior }
         prev_drivers_map = {d.driver.id: d.position for d in prev_drivers}
         prev_teams_map = {t.id: t.position for t in prev_teams}
 
-        # Compara Pilotos
         for driver in current_drivers:
             old_pos = prev_drivers_map.get(driver.driver.id)
-            if old_pos:
-                driver.change = old_pos - driver.position
-            else:
-                driver.change = 0 
+            driver.change = (old_pos - driver.position) if old_pos else 0
 
-        # Compara Equipes
         for team in current_teams:
             old_pos = prev_teams_map.get(team.id)
-            if old_pos:
-                team.change = old_pos - team.position
-            else:
-                team.change = 0
+            team.change = (old_pos - team.position) if old_pos else 0
     else:
-        # Se for a 1ª etapa, não tem mudança
         for d in current_drivers: d.change = 0
         for t in current_teams: t.change = 0
 
@@ -93,23 +75,15 @@ def season_detail(request, season_id):
 def round_detail(request, season_id, round_id):
     season = get_object_or_404(Season, pk=season_id)
     round_obj = get_object_or_404(Round, pk=round_id, season=season)
-    
     results = round_obj.results.select_related('entry__driver', 'entry__team').order_by('position')
-
-    context = {
-        'season': season,
-        'round': round_obj,
-        'results': results,
-    }
+    context = { 'season': season, 'round': round_obj, 'results': results }
     return render(request, 'championship/round_detail.html', context)
-
 
 # --- Função Auxiliar para Performance ---
 def get_driver_performance_data(season, driver_id):
     if not driver_id:
         return None
     
-    # Busca a inscrição do piloto
     try:
         driver_season = DriverTeamSeason.objects.select_related('driver', 'team').get(
             season=season, driver_id=driver_id
@@ -117,10 +91,7 @@ def get_driver_performance_data(season, driver_id):
     except DriverTeamSeason.DoesNotExist:
         return None
 
-    # Busca todas as etapas e resultados
     rounds = season.rounds.all().order_by('order')
-    
-    # Prepara listas para os gráficos
     labels = [] 
     points_cumulative = [] 
     positions = [] 
@@ -131,26 +102,18 @@ def get_driver_performance_data(season, driver_id):
     
     for r in rounds:
         labels.append(f"R{r.order}")
-        
-        # Tenta achar o resultado nesta etapa
         result = driver_season.results.filter(round=r).first()
         
         if result:
             current_total += result.points
             points_cumulative.append(current_total)
             positions.append(result.position)
-            
-            # Stats extras
-            if result.fastest_lap:
-                total_fast_laps += 1
-            if result.position < best_pos:
-                best_pos = result.position
+            if result.fastest_lap: total_fast_laps += 1
+            if result.position < best_pos: best_pos = result.position
         else:
-            # Se não correu, mantém o total anterior e marca posição como null
             points_cumulative.append(current_total)
             positions.append(None) 
 
-    # Estatísticas Resumidas
     stats = {
         'name': driver_season.driver.name,
         'team_name': driver_season.team.name,
@@ -167,15 +130,11 @@ def get_driver_performance_data(season, driver_id):
 # --- A View Principal de Performance ---
 def performance_analysis(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
-    
-    # Pega todos os pilotos inscritos para preencher o Dropdown
     drivers_list = DriverTeamSeason.objects.filter(season=season).select_related('driver').order_by('driver__name')
     
-    # Pega IDs da URL
     p1_id = request.GET.get('p1')
     p2_id = request.GET.get('p2')
     
-    # Processa os dados
     driver1_stats = get_driver_performance_data(season, p1_id)
     driver2_stats = get_driver_performance_data(season, p2_id)
 
