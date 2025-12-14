@@ -5,9 +5,21 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Análise de Performance</h2>
-        <p class="text-sm text-gray-500">Compare a evolução dos pilotos etapa a etapa.</p>
+    <div class="mb-6 md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl sm:truncate">
+                Análise de Performance
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">Compare a evolução dos pilotos etapa a etapa.</p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'season_detail' season.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Voltar
+            </a>
+        </div>
     </div>
 
     <div class="bg-white rounded-lg shadow p-4 mb-8 border border-gray-200">
@@ -114,25 +126,26 @@
 
 {% if d1 %}
 <script>
-    // --- Configuração Comum ---
+    // --- Configuração da Toolbar (Mãozinha Padrão) ---
+    const commonChartConfig = {
+        toolbar: { 
+            show: true,
+            autoSelected: 'pan' // Garante que o PAN (Mãozinha) venha selecionado
+        }, 
+        zoom: { enabled: true },
+        fontFamily: 'Inter, sans-serif',
+        parentHeightOffset: 0,
+    };
+
+    // --- Opções Gerais (Estilo) ---
     const commonOptions = {
-        chart: {
-            // Garante que a barra de ferramentas apareça
-            toolbar: { 
-                show: true,
-                autoSelected: 'pan' // <--- AQUI ESTÁ A MÁGICA (Define a mãozinha como padrão)
-            }, 
-            zoom: { enabled: true },
-            fontFamily: 'Inter, sans-serif',
-            parentHeightOffset: 0,
-        },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
+        theme: { mode: 'light' },
         xaxis: {
             categories: {{ d1.labels|safe }}, 
             tooltip: { enabled: false }
-        },
-        theme: { mode: 'light' }
+        }
     };
 
     // --- Gráfico 1: Pontos Acumulados (Area Chart) ---
@@ -150,7 +163,12 @@
             }
             {% endif %}
         ],
-        chart: { type: 'area', height: 320, parentHeightOffset: 0 },
+        // AQUI ESTAVA O ERRO: Agora mesclamos as configs corretamente
+        chart: { 
+            type: 'area', 
+            height: 320, 
+            ...commonChartConfig 
+        },
         colors: ["{{ d1.team_color }}" {% if d2 %}, "{{ d2.team_color }}" {% endif %}],
         fill: {
             type: 'gradient',
@@ -166,7 +184,6 @@
     new ApexCharts(document.querySelector("#chart-points"), optionsPoints).render();
 
     // --- Gráfico 2: Posições (Line/Scatter invertido) ---
-    // Dica: No automobilismo, gráfico de posição inverte o Eixo Y (1º lugar fica no topo)
     var optionsPos = {
         ...commonOptions,
         series: [
@@ -181,12 +198,17 @@
             }
             {% endif %}
         ],
-        chart: { type: 'line', height: 320, parentHeightOffset: 0 },
+        // Mesclando configs aqui também
+        chart: { 
+            type: 'line', 
+            height: 320, 
+            ...commonChartConfig 
+        },
         colors: ["{{ d1.team_color }}" {% if d2 %}, "{{ d2.team_color }}" {% endif %}],
-        stroke: { curve: 'straight', width: 2, dashArray: [0, 5] }, // Rival tracejado se quiser
-        markers: { size: 5 }, // Bolinhas marcando a posição
+        stroke: { curve: 'straight', width: 2, dashArray: [0, 5] },
+        markers: { size: 5 },
         yaxis: { 
-            reversed: true, // INVERTE O EIXO: 1º LUGAR NO TOPO
+            reversed: true, 
             title: { text: 'Posição de Chegada' },
             min: 1,
             forceNiceScale: true
