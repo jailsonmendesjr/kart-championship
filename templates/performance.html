@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Performance - {{ season.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Análise de Performance</h2>
+        <p class="text-sm text-gray-500">Compare a evolução dos pilotos etapa a etapa.</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 mb-8 border border-gray-200">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Piloto Principal</label>
+                <select name="p1" onchange="this.form.submit()" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                    <option value="">Selecione um piloto...</option>
+                    {% for item in drivers_list %}
+                        <option value="{{ item.driver.id }}" {% if selected_p1 == item.driver.id %}selected{% endif %}>
+                            {{ item.driver.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Comparar com (Opcional)</label>
+                <select name="p2" onchange="this.form.submit()" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                    <option value="">Ninguém (Apenas individual)</option>
+                    {% for item in drivers_list %}
+                        {% if item.driver.id != selected_p1 %}
+                            <option value="{{ item.driver.id }}" {% if selected_p2 == item.driver.id %}selected{% endif %}>
+                                {{ item.driver.name }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {% if d1 %}
+    <div class="mb-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Raio-X da Temporada</h3>
+        
+        <div class="grid grid-cols-2 {% if d2 %}md:grid-cols-4{% else %}md:grid-cols-4{% endif %} gap-4">
+            
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d1.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Pontos Totais</p>
+                <p class="text-2xl font-bold text-gray-900">{{ d1.total_points }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ d1.name }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d1.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Melhor Chegada</p>
+                <p class="text-2xl font-bold text-gray-900">{{ d1.best_position }}º</p>
+                <p class="text-xs text-gray-400 truncate">{{ d1.name }}</p>
+            </div>
+
+            {% if d2 %}
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d2.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Pontos Totais</p>
+                <p class="text-2xl font-bold text-gray-900">{{ d2.total_points }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ d2.name }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d2.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Melhor Chegada</p>
+                <p class="text-2xl font-bold text-gray-900">{{ d2.best_position }}º</p>
+                <p class="text-xs text-gray-400 truncate">{{ d2.name }}</p>
+            </div>
+            {% else %}
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d1.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Voltas Rápidas</p>
+                <p class="text-2xl font-bold text-gray-900">{{ d1.fast_laps }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border-l-4" style="border-color: {{ d1.team_color }}">
+                <p class="text-xs text-gray-500 uppercase">Equipe</p>
+                <p class="text-sm font-bold text-gray-900 truncate mt-1">{{ d1.team_name }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="space-y-8">
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-800">🏆 Evolução de Pontos</h3>
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Acumulado</span>
+            </div>
+            <div id="chart-points" class="w-full h-64 md:h-80"></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-800">📊 Histórico de Posições</h3>
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Por Etapa</span>
+            </div>
+            <div id="chart-positions" class="w-full h-64 md:h-80"></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhum piloto selecionado</h3>
+        <p class="mt-1 text-sm text-gray-500">Selecione um piloto acima para ver as estatísticas.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+{% if d1 %}
+<script>
+    // --- Configuração Comum ---
+    const commonOptions = {
+        chart: {
+            toolbar: { show: false }, // Limpa visual no mobile
+            zoom: { enabled: false },
+            fontFamily: 'Inter, sans-serif',
+        },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: {
+            categories: {{ d1.labels|safe }}, // Eixo X: R1, R2, R3...
+            tooltip: { enabled: false }
+        },
+        theme: { mode: 'light' }
+    };
+
+    // --- Gráfico 1: Pontos Acumulados (Area Chart) ---
+    var optionsPoints = {
+        ...commonOptions,
+        series: [
+            {
+                name: "{{ d1.name }}",
+                data: {{ d1.data_points|safe }}
+            }
+            {% if d2 %},
+            {
+                name: "{{ d2.name }}",
+                data: {{ d2.data_points|safe }}
+            }
+            {% endif %}
+        ],
+        chart: { type: 'area', height: 320, parentHeightOffset: 0 },
+        colors: ["{{ d1.team_color }}" {% if d2 %}, "{{ d2.team_color }}" {% endif %}],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.7,
+                opacityTo: 0.2,
+                stops: [0, 90, 100]
+            }
+        },
+        yaxis: { title: { text: 'Pontos' } }
+    };
+    new ApexCharts(document.querySelector("#chart-points"), optionsPoints).render();
+
+    // --- Gráfico 2: Posições (Line/Scatter invertido) ---
+    // Dica: No automobilismo, gráfico de posição inverte o Eixo Y (1º lugar fica no topo)
+    var optionsPos = {
+        ...commonOptions,
+        series: [
+            {
+                name: "{{ d1.name }}",
+                data: {{ d1.data_positions|safe }}
+            }
+            {% if d2 %},
+            {
+                name: "{{ d2.name }}",
+                data: {{ d2.data_positions|safe }}
+            }
+            {% endif %}
+        ],
+        chart: { type: 'line', height: 320, parentHeightOffset: 0 },
+        colors: ["{{ d1.team_color }}" {% if d2 %}, "{{ d2.team_color }}" {% endif %}],
+        stroke: { curve: 'straight', width: 2, dashArray: [0, 5] }, // Rival tracejado se quiser
+        markers: { size: 5 }, // Bolinhas marcando a posição
+        yaxis: { 
+            reversed: true, // INVERTE O EIXO: 1º LUGAR NO TOPO
+            title: { text: 'Posição de Chegada' },
+            min: 1,
+            forceNiceScale: true
+        }
+    };
+    new ApexCharts(document.querySelector("#chart-positions"), optionsPos).render();
+</script>
+{% endif %}
+{% endblock %}
