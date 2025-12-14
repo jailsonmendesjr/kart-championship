@@ -117,14 +117,19 @@
     // --- Configuração Comum ---
     const commonOptions = {
         chart: {
-            toolbar: { show: false }, // Limpa visual no mobile
-            zoom: { enabled: false },
+            // Garante que a barra de ferramentas apareça
+            toolbar: { 
+                show: true,
+                autoSelected: 'pan' // <--- AQUI ESTÁ A MÁGICA (Define a mãozinha como padrão)
+            }, 
+            zoom: { enabled: true },
             fontFamily: 'Inter, sans-serif',
+            parentHeightOffset: 0,
         },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         xaxis: {
-            categories: {{ d1.labels|safe }}, // Eixo X: R1, R2, R3...
+            categories: {{ d1.labels|safe }}, 
             tooltip: { enabled: false }
         },
         theme: { mode: 'light' }

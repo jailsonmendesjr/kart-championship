@@ -135,8 +135,17 @@ def performance_analysis(request, season_id):
     p1_id = request.GET.get('p1')
     p2_id = request.GET.get('p2')
     
+    # Processa os dados
     driver1_stats = get_driver_performance_data(season, p1_id)
     driver2_stats = get_driver_performance_data(season, p2_id)
+
+    # --- NOVO: Lógica para diferenciar cores de companheiros de equipe ---
+    if driver1_stats and driver2_stats:
+        # Se as cores forem idênticas (mesma equipe)
+        if driver1_stats['team_color'] == driver2_stats['team_color']:
+            # Define uma cor de contraste para o Piloto 2 (Cinza Escuro / Preto Suave)
+            driver2_stats['team_color'] = "#374151" 
+    # ---------------------------------------------------------------------
 
     context = {
         'season': season,
