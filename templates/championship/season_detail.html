@@ -5,7 +5,6 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="md:flex md:items-center md:justify-between mb-8">
     <div class="mb-4">
         <a href="{% url 'season_list' %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-transparent hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
             <svg class="-ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -22,6 +21,7 @@
             </h2>
             <p class="mt-1 text-sm text-gray-500">Classificação Atualizada</p>
         </div>
+
         <div class="mt-4 flex md:mt-0 md:ml-4"> 
             <a href="{% url 'performance_analysis' season.id %}" 
                onclick="gtag('event', 'clique_performance', {'event_category': 'Navegacao', 'event_label': 'Botao Header'});"
@@ -33,7 +33,6 @@
             </a>
         </div>
     </div>
-</div>
     
     <div class="mb-10">
         <div class="flex items-center justify-between mb-4 px-1">
