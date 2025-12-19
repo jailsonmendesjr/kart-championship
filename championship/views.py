@@ -47,8 +47,10 @@ def season_detail(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
     rounds_count = season.rounds.count()
 
+    # 1. Calcula o Ranking Atual
     current_drivers, current_teams = calculate_standings(season, exclude_last_round=False)
 
+    # 2. Lógica de Mudança de Posição (Setinhas)
     if rounds_count > 1:
         prev_drivers, prev_teams = calculate_standings(season, exclude_last_round=True)
         prev_drivers_map = {d.driver.id: d.position for d in prev_drivers}
@@ -65,10 +67,14 @@ def season_detail(request, season_id):
         for d in current_drivers: d.change = 0
         for t in current_teams: t.change = 0
 
+    # 3. Busca as etapas ordenadas da mais recente para a mais antiga (Decrescente)
+    rounds_list = season.rounds.all().order_by('-order')
+
     context = {
         'season': season,
         'drivers_ranking': current_drivers,
         'teams_ranking': current_teams,
+        'rounds_list': rounds_list, # <--- Nova variável para o template
     }
     return render(request, 'championship/season_detail.html', context)
 
