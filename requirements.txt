@@ -5,4 +5,3 @@ gunicorn
 whitenoise
 dj-database-url
 django-import-export
-django-import-export==4.1.1
