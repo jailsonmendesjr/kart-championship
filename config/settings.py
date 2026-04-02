@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'import_export',
     'championship',  # <--- Adicione esta linha
+
 ]
 
 MIDDLEWARE = [

@@ -1,36 +1,30 @@
 from django.contrib import admin
+from import_export.admin import ExportActionMixin
 from .models import Season, Team, Driver, DriverTeamSeason, Round, RoundResult
 
 @admin.register(Season)
-class SeasonAdmin(admin.ModelAdmin):
+class SeasonAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ('name', 'year', 'is_active')
-    list_filter = ('year', 'is_active')
 
 @admin.register(Team)
-class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'primary_color')
-    prepopulated_fields = {"slug": ("name",)}
+class TeamAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ('name',)
 
 @admin.register(Driver)
-class DriverAdmin(admin.ModelAdmin):
-    list_display = ('name', 'nickname', 'number')
-    search_fields = ('name', 'nickname')
-    prepopulated_fields = {"slug": ("name",)}
+class DriverAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ('name', 'nickname')
 
 @admin.register(DriverTeamSeason)
-class DriverTeamSeasonAdmin(admin.ModelAdmin):
-    list_display = ('season', 'team', 'driver', 'car_number')
+class DriverTeamSeasonAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ('driver', 'team', 'season')
     list_filter = ('season', 'team')
 
-# Configuração da Tabela de Resultados dentro da Etapa
-class ResultInline(admin.TabularInline):
-    model = RoundResult
-    extra = 10 # Mostra 10 linhas vazias para preencher rápido
-    fields = ('position', 'entry', 'fastest_lap', 'points') # Ordem das colunas
-    readonly_fields = ('points',) # Pontos são calculados, o user não edita na mão
-
 @admin.register(Round)
-class RoundAdmin(admin.ModelAdmin):
-    list_display = ('name', 'season', 'date', 'location')
+class RoundAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ('name', 'season', 'date')
     list_filter = ('season',)
-    inlines = [ResultInline]
+
+@admin.register(RoundResult)
+class RoundResultAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ('round', 'driver_team_season', 'position', 'points', 'fastest_lap')
+    list_filter = ('round__season', 'round')
