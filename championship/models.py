@@ -25,8 +25,7 @@ class Season(models.Model):
         ordering = ["-year", "name"]
 
     def __str__(self):
-        # Exibe: "Clauston (Sauber | Campeonato 2026)"
-        return f"{self.driver} ({self.team} | {self.season.name})"
+        return f"{self.name} ({self.year})"
 
 class Team(models.Model):
     name = models.CharField("Nome", max_length=100, unique=True)
@@ -68,7 +67,8 @@ class DriverTeamSeason(models.Model):
         unique_together = ("season", "driver")
 
     def __str__(self):
-        return f"{self.driver} ({self.team})"
+        # Exibe: "Clauston (Sauber | Campeonato 2026)"
+        return f"{self.driver} ({self.team} | {self.season.name})"
 
     def clean(self):
         existing = DriverTeamSeason.objects.filter(season=self.season, team=self.team)
