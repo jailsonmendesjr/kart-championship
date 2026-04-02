@@ -4,9 +4,22 @@ from .models import Season, Team, Driver, DriverTeamSeason, Round, RoundResult
 class RoundResultInline(admin.TabularInline):
     model = RoundResult
     extra = 1
-    readonly_fields = ('points',) # <--- Essa linha traz a coluna de volta (bloqueada para edição)
-    # Removendo a lista estrita de 'fields' deixa o Django renderizar 
-    # todos os campos reais do modelo de forma segura, evitando erros.
+    readonly_fields = ('points',) 
+
+    # --- A MÁGICA DA FILTRAGEM COMEÇA AQUI ---
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "entry":
+            # Tenta pegar o ID da Etapa (Round) que está sendo editada através da URL
+            object_id = request.resolver_match.kwargs.get('object_id')
+            
+            if object_id:
+                # Se estamos editando uma etapa existente, descobre a temporada dela
+                current_round = Round.objects.get(pk=object_id)
+                # Filtra o dropdown para mostrar APENAS as inscrições daquela temporada
+                kwargs["queryset"] = DriverTeamSeason.objects.filter(season=current_round.season)
+                
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    # --- FIM DA MÁGICA ---
 
 @admin.register(Season)
 class SeasonAdmin(admin.ModelAdmin):
@@ -30,6 +43,3 @@ class RoundAdmin(admin.ModelAdmin):
     list_display = ('name', 'season', 'date')
     list_filter = ('season',)
     inlines = [RoundResultInline]
-
-# Note que eu apaguei a classe RoundResultAdmin. 
-# Assim, o menu "Resultados" vai sumir e voltamos à normalidade.
