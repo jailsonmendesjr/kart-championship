@@ -1,8 +1,6 @@
 import json
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Sum, Q, Count, Case, When, IntegerField
-from django.db.models.functions import Coalesce
-from .models import Season, DriverTeamSeason, Team, Round
+from .models import Season, DriverTeamSeason, Team, Round, RoundResult
 
 def season_list(request):
     seasons = Season.objects.all().order_by('-year')
@@ -10,62 +8,81 @@ def season_list(request):
 
 def calculate_standings(season, exclude_last_round=False):
     """
-    Calcula o ranking com soma segura de pontos e critério de desempate (Vitórias).
+    Novo motor de cálculo 100% Python. Seguro, rápido e preparado para a futura regra de Descartes.
     """
-    # Filtros para ignorar a última etapa na lógica da "setinha" de variação de posição
-    if exclude_last_round:
-        last_round = season.rounds.order_by('order').last()
-        if last_round:
-            driver_filter = ~Q(results__round=last_round)
-            team_filter = ~Q(season_drivers__results__round=last_round)
-        else:
-            driver_filter = Q()
-            team_filter = Q()
-    else:
-        driver_filter = Q()
-        team_filter = Q()
-
-    # Conta o número de vitórias (posições em 1º lugar) para desempate
-    wins_query = Count(
-        Case(When(results__position=1, then=1), output_field=IntegerField()),
-        filter=driver_filter
-    )
-    
-    # Ranking de Pilotos
-    drivers = DriverTeamSeason.objects.filter(season=season).annotate(
-        total_points=Coalesce(Sum('results__points', filter=driver_filter), 0),
-        wins=wins_query
-    ).order_by('-total_points', '-wins', 'driver__name')
-
-    drivers_list = list(drivers)
-    for index, entry in enumerate(drivers_list):
-        entry.position = index + 1
+    # 1. Pega as etapas válidas
+    rounds = list(season.rounds.all().order_by('order'))
+    if exclude_last_round and rounds:
+        rounds = rounds[:-1]
         
-    # Ranking de Equipes
-    teams_wins_query = Count(
-        Case(When(season_drivers__results__position=1, then=1), output_field=IntegerField()),
-        filter=team_filter
-    )
+    round_ids = [r.id for r in rounds]
     
-    teams = Team.objects.filter(season_drivers__season=season).distinct().annotate(
-        total_points=Coalesce(Sum('season_drivers__results__points', filter=team_filter), 0),
-        wins=teams_wins_query
-    ).order_by('-total_points', '-wins', 'name')
+    # 2. Pega as inscrições de pilotos da temporada
+    drivers = list(DriverTeamSeason.objects.filter(season=season).select_related('driver', 'team'))
     
-    teams_list = list(teams)
-    for index, entry in enumerate(teams_list):
-        entry.position = index + 1
+    # Prepara o contador
+    for d in drivers:
+        d.total_points = 0
+        d.wins = 0
 
-    return drivers_list, teams_list
+    # 3. Pega todos os resultados e processa um a um
+    results = RoundResult.objects.filter(round_id__in=round_ids).select_related('entry')
+    
+    for res in results:
+        for d in drivers:
+            if d.id == res.entry_id:
+                d.total_points += res.points
+                if res.position == 1 and res.status == 'COMPLETED':
+                    d.wins += 1
+                break
+    
+    # 4. Ordenação Profissional (Desempates)
+    # Primeiro desempate: Ordem alfabética (como base)
+    drivers.sort(key=lambda x: x.driver.name.lower())
+    # Desempate principal: Pontos (maior), depois Vitórias (maior)
+    drivers.sort(key=lambda x: (x.total_points, x.wins), reverse=True)
+    
+    for index, d in enumerate(drivers):
+        d.position = index + 1
+        
+    # 5. Cálculo das Equipes
+    teams_dict = {}
+    for d in drivers:
+        if d.team_id not in teams_dict:
+            teams_dict[d.team_id] = {
+                'team': d.team,
+                'total_points': 0,
+                'wins': 0
+            }
+            
+    for res in results:
+        team_id = res.entry.team_id
+        if team_id in teams_dict:
+            teams_dict[team_id]['total_points'] += res.points
+            if res.position == 1 and res.status == 'COMPLETED':
+                teams_dict[team_id]['wins'] += 1
+                
+    teams_list = []
+    for team_id, data in teams_dict.items():
+        team_obj = data['team']
+        team_obj.total_points = data['total_points']
+        team_obj.wins = data['wins']
+        teams_list.append(team_obj)
+        
+    teams_list.sort(key=lambda x: x.name.lower())
+    teams_list.sort(key=lambda x: (x.total_points, x.wins), reverse=True)
+    
+    for index, t in enumerate(teams_list):
+        t.position = index + 1
+        
+    return drivers, teams_list
 
 def season_detail(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
     rounds_count = season.rounds.count()
 
-    # 1. Calcula o Ranking Atual
     current_drivers, current_teams = calculate_standings(season, exclude_last_round=False)
 
-    # 2. Lógica de Mudança de Posição (Setinhas)
     if rounds_count > 1:
         prev_drivers, prev_teams = calculate_standings(season, exclude_last_round=True)
         prev_drivers_map = {d.driver.id: d.position for d in prev_drivers}
@@ -82,7 +99,6 @@ def season_detail(request, season_id):
         for d in current_drivers: d.change = 0
         for t in current_teams: t.change = 0
 
-    # 3. Busca as etapas ordenadas da mais recente para a mais antiga
     rounds_list = season.rounds.all().order_by('-order')
 
     context = {
