@@ -60,6 +60,9 @@ class DriverTeamSeason(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="season_drivers", verbose_name="Equipe")
     driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name="seasons", verbose_name="Piloto")
     car_number = models.PositiveIntegerField("Número do Carro", null=True, blank=True)
+    
+    # NOVO CAMPO: Etiqueta de Convidado
+    is_guest = models.BooleanField("Piloto Convidado?", default=False, help_text="Convidados consomem pontos na etapa, mas NÃO aparecem no Ranking Geral.")
 
     class Meta:
         verbose_name = "Inscrição"
@@ -67,8 +70,8 @@ class DriverTeamSeason(models.Model):
         unique_together = ("season", "driver")
 
     def __str__(self):
-        # Exibe: "Clauston (Sauber | Campeonato 2026)"
-        return f"{self.driver} ({self.team} | {self.season.name})"
+        # Exibe: "Clauston (Sauber) ---> Campeonato 2026"
+        return f"{self.driver.name} ({self.team.name}) ---> {self.season.name}"
 
     def clean(self):
         existing = DriverTeamSeason.objects.filter(season=self.season, team=self.team)

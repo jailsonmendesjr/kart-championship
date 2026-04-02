@@ -17,13 +17,19 @@ def calculate_standings(season, exclude_last_round=False):
         
     round_ids = [r.id for r in rounds]
     
-    # 2. Pega as inscrições de pilotos da temporada
-    drivers = list(DriverTeamSeason.objects.filter(season=season).select_related('driver', 'team'))
+    # 2. Pega as inscrições de pilotos da temporada (A MÁGICA DOS CONVIDADOS AQUI)
+    # Ao adicionar is_guest=False, o sistema ignora por completo os convidados na matemática global.
+    drivers = list(DriverTeamSeason.objects.filter(
+        season=season, 
+        is_guest=False
+    ).select_related('driver', 'team'))
     
     # Prepara o contador
     for d in drivers:
         d.total_points = 0
         d.wins = 0
+
+    # ... (o resto da função calculate_standings continua exatamente igual ao que já tem)
 
     # 3. Pega todos os resultados e processa um a um
     results = RoundResult.objects.filter(round_id__in=round_ids).select_related('entry')
