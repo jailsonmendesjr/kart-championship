@@ -1,14 +1,16 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
-# --- Regra de Pontuação (F1) ---
-F1_POINTS = {
+# --- Regras de Pontuação ---
+POINTS_2025 = {
     1: 25, 2: 18, 3: 15, 4: 12, 5: 10,
     6: 8, 7: 6, 8: 4, 9: 2, 10: 1
 }
 
-def get_points_for_position(position):
-    return F1_POINTS.get(position, 0)
+POINTS_2026 = {
+    1: 18, 2: 15, 3: 13, 4: 11, 5: 9,
+    6: 7, 7: 5, 8: 3, 9: 2, 10: 1
+}
 
 # --- Models ---
 
@@ -91,38 +93,64 @@ class Round(models.Model):
         return f"{self.name}"
 
 class RoundResult(models.Model):
+    STATUS_CHOICES = [
+        ('COMPLETED', 'Concluído'),
+        ('DNF', 'Não Concluiu (DNF)'),
+        ('DNS', 'Faltou (DNS)'),
+    ]
+
     round = models.ForeignKey(Round, on_delete=models.CASCADE, related_name="results", verbose_name="Etapa")
     entry = models.ForeignKey(DriverTeamSeason, on_delete=models.CASCADE, related_name="results", verbose_name="Piloto/Equipe")
     position = models.PositiveIntegerField("Posição")
-    fastest_lap = models.BooleanField("Volta + Rápida?", default=False) # Novo campo
+    
+    # Novos campos
+    status = models.CharField("Status da Prova", max_length=10, choices=STATUS_CHOICES, default='COMPLETED')
+    has_penalty = models.BooleanField("Sofreu Punição?", default=False)
+    penalty_reason = models.CharField("Motivo da Punição", max_length=200, blank=True)
+    fastest_lap = models.BooleanField("Volta + Rápida?", default=False)
+    
     points = models.PositiveIntegerField("Pontos", default=0, editable=False)
 
     class Meta:
         verbose_name = "Resultado"
         verbose_name_plural = "Resultados"
         ordering = ["position"]
-        unique_together = ("round", "position") # Garante que ninguém duplique a posição
 
     def __str__(self):
         extra = " (Volta Rápida)" if self.fastest_lap else ""
-        return f"P{self.position} - {self.entry.driver}{extra}"
+        status_info = f" [{self.status}]" if self.status != 'COMPLETED' else ""
+        return f"P{self.position} - {self.entry.driver}{extra}{status_info}"
 
     def clean(self):
-        # Validação: Garante apenas 1 volta rápida por etapa
+        # Validação de Volta Rápida Única
         if self.fastest_lap:
-            # Busca se já existe ALGUÉM com volta rápida nesta etapa
             existing = RoundResult.objects.filter(round=self.round, fastest_lap=True)
-            
-            # Se estou editando uma linha já existente, me excluo da busca
             if self.pk:
                 existing = existing.exclude(pk=self.pk)
-            
             if existing.exists():
-                raise ValidationError("Já existe um piloto com a volta mais rápida nesta etapa. Desmarque o outro primeiro.")
+                raise ValidationError("Já existe um piloto com a volta mais rápida nesta etapa.")
+        
+        # Validação de Posição Única (ignorando DNS que podem ficar sem posição definida)
+        if self.status != 'DNS':
+            existing_pos = RoundResult.objects.filter(round=self.round, position=self.position)
+            if self.pk:
+                existing_pos = existing_pos.exclude(pk=self.pk)
+            if existing_pos.exists():
+                raise ValidationError(f"A posição {self.position} já foi registrada para outro piloto nesta etapa.")
 
     def save(self, *args, **kwargs):
-        # Calcula pontos base + 1 ponto se tiver volta rápida
-        base_points = get_points_for_position(self.position)
-        bonus = 1 if self.fastest_lap else 0
-        self.points = base_points + bonus
+        # Se não concluiu ou faltou, pontos = 0
+        if self.status in ['DNF', 'DNS']:
+            self.points = 0
+        else:
+            # Trava temporal: Define qual tabela usar
+            if self.round.season.year >= 2026:
+                base_points = POINTS_2026.get(self.position, 0)
+            else:
+                base_points = POINTS_2025.get(self.position, 0)
+            
+            # Bônus de volta rápida (aplica-se a quem completou)
+            bonus = 1 if self.fastest_lap else 0
+            self.points = base_points + bonus
+            
         super().save(*args, **kwargs)
