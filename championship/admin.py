@@ -32,9 +32,9 @@ class RoundAdmin(ImportExportModelAdmin):
     list_filter = ('season',)
     inlines = [RoundResultInline] # <--- Isso traz de volta o que funcionava antes!
 
-# 2. Área de Resultados (apenas para exportação em massa se precisar)
+# 2. Área de Resultados (apenas para exportação em massa)
 @admin.register(RoundResult)
 class RoundResultAdmin(ExportActionMixin, admin.ModelAdmin):
-    # Removido 'fastest_lap' para matar o Erro 500
-    list_display = ('round', 'driver_team_season', 'position', 'points')
-    list_filter = ('round__season', 'round')
+    # Removidos o list_display e list_filter que causaram o erro.
+    # O Django usará o formato padrão e a exportação puxará todos os campos automaticamente.
+    pass
