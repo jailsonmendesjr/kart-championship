@@ -25,7 +25,8 @@ class Season(models.Model):
         ordering = ["-year", "name"]
 
     def __str__(self):
-        return f"{self.name} ({self.year})"
+        # Exibe: "Clauston (Sauber | Campeonato 2026)"
+        return f"{self.driver} ({self.team} | {self.season.name})"
 
 class Team(models.Model):
     name = models.CharField("Nome", max_length=100, unique=True)

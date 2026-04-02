@@ -6,17 +6,21 @@ class RoundResultInline(admin.TabularInline):
     extra = 1
     readonly_fields = ('points',) 
 
-    # --- A MÁGICA DA FILTRAGEM COMEÇA AQUI ---
+    # 1. O Django chama isso primeiro. Vamos "guardar" a Etapa atual na memória.
+    def get_formset(self, request, obj=None, **kwargs):
+        request._current_round_obj = obj
+        return super().get_formset(request, obj, **kwargs)
+
+    # 2. O Django chama isso para montar o dropdown. Vamos usar a Etapa guardada.
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "entry":
-            # Tenta pegar o ID da Etapa (Round) que está sendo editada através da URL
-            object_id = request.resolver_match.kwargs.get('object_id')
+            current_round = getattr(request, '_current_round_obj', None)
             
-            if object_id:
-                # Se estamos editando uma etapa existente, descobre a temporada dela
-                current_round = Round.objects.get(pk=object_id)
-                # Filtra o dropdown para mostrar APENAS as inscrições daquela temporada
-                kwargs["queryset"] = DriverTeamSeason.objects.filter(season=current_round.season)
+            # Se a etapa já existe e tem uma temporada, filtra!
+            if current_round and current_round.season:
+                kwargs["queryset"] = DriverTeamSeason.objects.filter(
+                    season=current_round.season
+                ).order_by('driver__name')
                 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
     # --- FIM DA MÁGICA ---
