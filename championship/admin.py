@@ -4,6 +4,7 @@ from .models import Season, Team, Driver, DriverTeamSeason, Round, RoundResult
 class RoundResultInline(admin.TabularInline):
     model = RoundResult
     extra = 1
+    readonly_fields = ('points',) # <--- Essa linha traz a coluna de volta (bloqueada para edição)
     # Removendo a lista estrita de 'fields' deixa o Django renderizar 
     # todos os campos reais do modelo de forma segura, evitando erros.
 
