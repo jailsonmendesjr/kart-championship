@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from .models import Season, DriverTeamSeason, Team, Round
 
@@ -10,32 +10,47 @@ def season_list(request):
 
 def calculate_standings(season, exclude_last_round=False):
     """
-    Função auxiliar que calcula o ranking.
+    Calcula o ranking com soma segura de pontos e critério de desempate (Vitórias).
     """
-    rounds = season.rounds.all().order_by('order')
-    if exclude_last_round and rounds.exists():
-        last_round = rounds.last()
-        rounds = rounds.exclude(pk=last_round.pk)
+    # Filtros para ignorar a última etapa na lógica da "setinha" de variação de posição
+    if exclude_last_round:
+        last_round = season.rounds.order_by('order').last()
+        if last_round:
+            driver_filter = ~Q(results__round=last_round)
+            team_filter = ~Q(season_drivers__results__round=last_round)
+        else:
+            driver_filter = Q()
+            team_filter = Q()
+    else:
+        driver_filter = Q()
+        team_filter = Q()
+
+    # Conta o número de vitórias (posições em 1º lugar) para desempate
+    wins_query = Count(
+        Case(When(results__position=1, then=1), output_field=IntegerField()),
+        filter=driver_filter
+    )
     
     # Ranking de Pilotos
     drivers = DriverTeamSeason.objects.filter(season=season).annotate(
-        total_points=Coalesce(
-            Sum('results__points', filter=Q(results__round__in=rounds)), 
-            0
-        )
-    ).order_by('-total_points', 'driver__name')
+        total_points=Coalesce(Sum('results__points', filter=driver_filter), 0),
+        wins=wins_query
+    ).order_by('-total_points', '-wins', 'driver__name')
 
     drivers_list = list(drivers)
     for index, entry in enumerate(drivers_list):
         entry.position = index + 1
         
     # Ranking de Equipes
+    teams_wins_query = Count(
+        Case(When(season_drivers__results__position=1, then=1), output_field=IntegerField()),
+        filter=team_filter
+    )
+    
     teams = Team.objects.filter(season_drivers__season=season).distinct().annotate(
-        total_points=Coalesce(
-            Sum('season_drivers__results__points', filter=Q(season_drivers__results__round__in=rounds)),
-            0
-        )
-    ).order_by('-total_points', 'name')
+        total_points=Coalesce(Sum('season_drivers__results__points', filter=team_filter), 0),
+        wins=teams_wins_query
+    ).order_by('-total_points', '-wins', 'name')
     
     teams_list = list(teams)
     for index, entry in enumerate(teams_list):
@@ -67,14 +82,14 @@ def season_detail(request, season_id):
         for d in current_drivers: d.change = 0
         for t in current_teams: t.change = 0
 
-    # 3. Busca as etapas ordenadas da mais recente para a mais antiga (Decrescente)
+    # 3. Busca as etapas ordenadas da mais recente para a mais antiga
     rounds_list = season.rounds.all().order_by('-order')
 
     context = {
         'season': season,
         'drivers_ranking': current_drivers,
         'teams_ranking': current_teams,
-        'rounds_list': rounds_list, # <--- Nova variável para o template
+        'rounds_list': rounds_list,
     }
     return render(request, 'championship/season_detail.html', context)
 
@@ -85,7 +100,6 @@ def round_detail(request, season_id, round_id):
     context = { 'season': season, 'round': round_obj, 'results': results }
     return render(request, 'championship/round_detail.html', context)
 
-# --- Função Auxiliar para Performance ---
 def get_driver_performance_data(season, driver_id):
     if not driver_id:
         return None
@@ -133,7 +147,6 @@ def get_driver_performance_data(season, driver_id):
     }
     return stats
 
-# --- A View Principal de Performance ---
 def performance_analysis(request, season_id):
     season = get_object_or_404(Season, pk=season_id)
     drivers_list = DriverTeamSeason.objects.filter(season=season).select_related('driver').order_by('driver__name')
@@ -141,17 +154,12 @@ def performance_analysis(request, season_id):
     p1_id = request.GET.get('p1')
     p2_id = request.GET.get('p2')
     
-    # Processa os dados
     driver1_stats = get_driver_performance_data(season, p1_id)
     driver2_stats = get_driver_performance_data(season, p2_id)
 
-    # --- NOVO: Lógica para diferenciar cores de companheiros de equipe ---
     if driver1_stats and driver2_stats:
-        # Se as cores forem idênticas (mesma equipe)
         if driver1_stats['team_color'] == driver2_stats['team_color']:
-            # Define uma cor de contraste para o Piloto 2 (Cinza Escuro / Preto Suave)
             driver2_stats['team_color'] = "#374151" 
-    # ---------------------------------------------------------------------
 
     context = {
         'season': season,
