@@ -70,8 +70,11 @@ def calculate_standings(season, exclude_last_round=False):
                 'team': d.team,
                 'total_points': 0,
                 'wins': 0,
-                'podiums': 0 # Inicializa o contador
+                'podiums': 0,
+                'drivers_list': [] # NOVO: Lista para guardar os pilotos desta equipe
             }
+        # Guarda o piloto dentro da sua respectiva equipe
+        teams_dict[d.team_id]['drivers_list'].append(d)
             
     for res in results:
         team_id = res.entry.team_id
@@ -88,7 +91,14 @@ def calculate_standings(season, exclude_last_round=False):
         team_obj = data['team']
         team_obj.total_points = data['total_points']
         team_obj.wins = data['wins']
-        team_obj.podiums = data['podiums'] # Atribui o contador ao objeto
+        team_obj.podiums = data['podiums']
+        
+        # --- A MÁGICA DOS PILOTOS DA EQUIPE AQUI ---
+        # 1. Ordena os pilotos da equipe por quem tem mais pontos (reverse=True)
+        sorted_drivers = sorted(data['drivers_list'], key=lambda x: x.total_points, reverse=True)
+        # 2. Pega só o primeiro nome (split()[0]) e monta a string: "Nome (Pontos)"
+        team_obj.drivers_summary = " • ".join([f"{d.driver.name.split()[0]} ({d.total_points})" for d in sorted_drivers])
+        
         teams_list.append(team_obj)
         
     teams_list.sort(key=lambda x: x.name.lower())
