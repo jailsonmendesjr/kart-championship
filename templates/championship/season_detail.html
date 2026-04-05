@@ -194,85 +194,43 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">Pos</th>
-                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Piloto</th>
-                                    <th scope="col" class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipe</th>
-                                    
-                                    <th scope="col" class="hidden md:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Vitórias</th>
-                                    <th scope="col" class="hidden md:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pódios</th>
-                                    
+                                    <th scope="col" class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipe</th>
                                     <th scope="col" class="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        <span class="md:hidden">Pts</span><span class="hidden md:inline">Pontos</span>
+                                        <span class="md:hidden">Pts</span><span class="hidden md:inline">Pontos Totais</span>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                {% for driver in drivers_ranking %}
+                                {% for team in teams_ranking %}
                                 <tr>
                                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <span class="text-sm text-gray-900 font-bold w-6">{{ driver.position }}º</span>
+                                            <span class="text-sm text-gray-900 font-bold w-6">{{ team.position }}º</span>
                                             
                                             <span class="ml-2 text-xs font-medium">
-                                                {% if driver.change > 0 %}
-                                                    <span class="text-green-600 flex items-center" title="Subiu {{ driver.change }} posições">
-                                                        ▲ {{ driver.change }}
-                                                    </span>
-                                                {% elif driver.change < 0 %}
-                                                    <span class="text-red-600 flex items-center" title="Caiu posições">
-                                                        ▼ {{ driver.change|stringformat:"+d"|slice:"1:" }}
-                                                    </span>
+                                                {% if team.change > 0 %}
+                                                    <span class="text-green-600 flex items-center">▲ {{ team.change }}</span>
+                                                {% elif team.change < 0 %}
+                                                    <span class="text-red-600 flex items-center">▼ {{ team.change|stringformat:"+d"|slice:"1:" }}</span>
                                                 {% else %}
                                                     <span class="text-gray-300 font-bold ml-1">-</span>
                                                 {% endif %}
                                             </span>
                                         </div>
                                     </td>
-
+                                    
                                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <div class="h-2.5 w-2.5 rounded-full mr-2 md:hidden flex-shrink-0" style="background-color: {{ driver.team.primary_color }};"></div>
-                                            <div>
-                                                <div class="text-sm font-medium text-gray-900">{{ driver.driver.name }}</div>
-                                                
-                                                <div class="text-xs text-gray-500 md:hidden flex items-center mt-0.5">
-                                                    {{ driver.team.name }} • #{{ driver.car_number|default:"--" }}
-                                                </div>
-                                                
-                                                <div class="text-xs text-gray-600 md:hidden flex items-center mt-1 space-x-2">
-                                                    <span class="flex items-center bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
-                                                        🏆 <span class="ml-1 font-bold">{{ driver.wins }}</span>
-                                                    </span>
-                                                    <span class="flex items-center bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
-                                                        🥉 <span class="ml-1 font-bold">{{ driver.podiums }}</span>
-                                                    </span>
-                                                </div>
-
-                                                <div class="hidden md:block text-xs text-gray-500">
-                                                    #{{ driver.car_number|default:"--" }}
-                                                </div>
-                                            </div>
+                                            <div class="h-6 w-6 rounded-full mr-3 shadow-sm border border-gray-200" style="background-color: {{ team.primary_color }};"></div>
+                                            <div class="text-sm font-medium text-gray-900">{{ team.name }}</div>
                                         </div>
                                     </td>
-                                    
-                                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border-l-4" style="border-color: {{ driver.team.primary_color }}">
-                                            {{ driver.team.name }}
-                                        </span>
-                                    </td>
-
-                                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-700">
-                                        {{ driver.wins }}
-                                    </td>
-                                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-700">
-                                        {{ driver.podiums }}
-                                    </td>
-
-                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right">
-                                        <div class="text-base md:text-sm font-bold text-gray-900">{{ driver.total_points }}</div>
+                                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
+                                        {{ team.total_points }}
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Nenhum piloto pontuou ainda.</td></tr>
+                                <tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Nenhuma equipe pontuou ainda.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
