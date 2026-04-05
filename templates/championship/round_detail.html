@@ -78,25 +78,29 @@
                                                 {{ result.entry.driver.name }}
                                             </div>
                                             
-                                            {% if result.status == 'DNS' %}
-                                                <div class="mt-0.5">
+                                            <div class="mt-0.5 flex flex-wrap gap-1">
+                                                {% if result.status == 'DNS' %}
                                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-800">
                                                         Não Participou
                                                     </span>
-                                                </div>
-                                            {% elif result.status == 'DNF' %}
-                                                <div class="mt-0.5">
+                                                {% elif result.status == 'DNF' %}
                                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-800">
                                                         Não Concluiu
                                                     </span>
-                                                </div>
-                                            {% endif %}
+                                                {% endif %}
+
+                                                {% if result.has_penalty %}
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-900 border border-amber-200" title="{{ result.penalty_reason|default:'Punição aplicada pela organização' }}">
+                                                        ⚠️ Penalidade
+                                                    </span>
+                                                {% endif %}
+                                            </div>
                                             
-                                            <div class="text-xs text-gray-500 md:hidden flex items-center mt-1">
+                                            <div class="text-xs text-gray-500 md:hidden flex items-center mt-1.5">
                                                 {{ result.entry.team.name }} • #{{ result.entry.car_number|default:"--" }}
                                             </div>
 
-                                            <div class="hidden md:block text-xs text-gray-500 mt-0.5">
+                                            <div class="hidden md:block text-xs text-gray-500 mt-1">
                                                 #{{ result.entry.car_number|default:"--" }}
                                             </div>
                                         </div>
