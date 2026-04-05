@@ -50,10 +50,15 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for result in results %}
-                            <tr class="{% if result.position == 1 %}bg-yellow-50{% endif %} hover:bg-gray-50 transition-colors">
+                            
+                            <tr class="{% if result.status != 'COMPLETED' %}bg-gray-50 opacity-75{% elif result.position == 1 %}bg-yellow-50{% endif %} hover:bg-gray-100 transition-colors">
                                 
                                 <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                                    {% if result.position == 1 %}
+                                    {% if result.status == 'DNS' %}
+                                        <span class="text-red-600 font-bold text-sm tracking-wider">DNS</span>
+                                    {% elif result.status == 'DNF' %}
+                                        <span class="text-orange-600 font-bold text-sm tracking-wider">DNF</span>
+                                    {% elif result.position == 1 %}
                                         <span class="text-yellow-600 font-bold text-lg">1º 🏆</span>
                                     {% elif result.position == 2 %}
                                         <span class="text-gray-600 font-bold">2º 🥈</span>
@@ -69,13 +74,29 @@
                                         <div class="h-2.5 w-2.5 rounded-full mr-2 md:hidden flex-shrink-0" style="background-color: {{ result.entry.team.primary_color }};"></div>
                                         
                                         <div>
-                                            <div class="text-sm font-bold text-gray-900">{{ result.entry.driver.name }}</div>
+                                            <div class="text-sm font-bold {% if result.status != 'COMPLETED' %}text-gray-600{% else %}text-gray-900{% endif %}">
+                                                {{ result.entry.driver.name }}
+                                            </div>
                                             
-                                            <div class="text-xs text-gray-500 md:hidden flex items-center mt-0.5">
+                                            {% if result.status == 'DNS' %}
+                                                <div class="mt-0.5">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-800">
+                                                        Não Participou
+                                                    </span>
+                                                </div>
+                                            {% elif result.status == 'DNF' %}
+                                                <div class="mt-0.5">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-800">
+                                                        Não Concluiu
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <div class="text-xs text-gray-500 md:hidden flex items-center mt-1">
                                                 {{ result.entry.team.name }} • #{{ result.entry.car_number|default:"--" }}
                                             </div>
 
-                                            <div class="hidden md:block text-xs text-gray-500">
+                                            <div class="hidden md:block text-xs text-gray-500 mt-0.5">
                                                 #{{ result.entry.car_number|default:"--" }}
                                             </div>
                                         </div>
@@ -99,8 +120,12 @@
                                     {% endif %}
                                 </td>
 
-                                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
-                                    +{{ result.points }}
+                                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-bold {% if result.status != 'COMPLETED' %}text-gray-400{% else %}text-gray-900{% endif %}">
+                                    {% if result.status != 'COMPLETED' %}
+                                        -
+                                    {% else %}
+                                        +{{ result.points }}
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
