@@ -51,29 +51,37 @@
         
         <div class="flex overflow-x-auto pb-4 space-x-4 snap-x snap-mandatory scrollbar-hide">
             {% for round in rounds_list %}
+            
             <a href="{% url 'round_detail' season.id round.id %}" 
-               class="flex-none w-80 snap-center relative rounded-lg border border-gray-300 bg-white px-5 py-4 shadow-sm flex items-center space-x-3 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hover:shadow-md transition-all">
-                <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold border border-red-200">
+               class="flex-none w-[360px] snap-center bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-between hover:border-red-400 active:bg-gray-50 transition-all">
+                
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold border border-red-100">
                         {{ round.order }}
                     </div>
+                    
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-900 truncate">{{ round.name }}</p>
+                        <p class="text-xs text-gray-500 truncate flex items-center mt-0.5">
+                            {{ round.date|date:"d/m" }} <span class="mx-1">•</span> {{ round.location }}
+                        </p>
+                    </div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <span class="absolute inset-0" aria-hidden="true"></span>
-                    <p class="text-sm font-medium text-gray-900 truncate">{{ round.name }}</p>
-                    <p class="text-xs text-gray-500 truncate flex items-center mt-1">
-                        <svg class="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        {{ round.date|date:"d/m" }} <span class="mx-1">•</span> {{ round.location }}
-                    </p>
-                </div>
-                <div>
-                    <svg class="h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+
+                <div class="flex items-center flex-shrink-0 ml-3">
+                    {% if round.winner %}
+                        <div class="text-[10px] text-right mr-2">
+                            <span class="block text-gray-500">🏆 Vencedor</span>
+                            <span class="text-gray-900 font-bold truncate max-w-[80px]">{{ round.winner }}</span>
+                        </div>
+                    {% endif %}
+                    
+                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                     </svg>
                 </div>
             </a>
+            
             {% empty %}
             <div class="w-full text-center py-6 border-2 border-dashed border-gray-300 rounded-lg flex-none snap-center">
                 <p class="text-gray-500">Nenhuma etapa cadastrada ainda.</p>
