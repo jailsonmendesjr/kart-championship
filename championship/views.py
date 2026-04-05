@@ -38,15 +38,26 @@ def calculate_standings(season, exclude_last_round=False):
         for d in drivers:
             if d.id == res.entry_id:
                 d.total_points += res.points
-                if res.position == 1 and res.status == 'COMPLETED':
-                    d.wins += 1
+                if res.status == 'COMPLETED':
+                    # Conta vitórias
+                    if res.position == 1:
+                        d.wins += 1
+                    # Conta pódios (1º, 2º e 3º)
+                    if res.position in [1, 2, 3]:
+                        if not hasattr(d, 'podiums'):
+                            d.podiums = 0
+                        d.podiums += 1
                 break
     
-    # 4. Ordenação Profissional (Desempates)
-    # Primeiro desempate: Ordem alfabética (como base)
+    # Garante que o atributo podiums existe, mesmo que seja zero, para o desempate
+    for d in drivers:
+        if not hasattr(d, 'podiums'):
+            d.podiums = 0
+
+    # 4. Ordenação Profissional (Desempates Atualizados)
     drivers.sort(key=lambda x: x.driver.name.lower())
-    # Desempate principal: Pontos (maior), depois Vitórias (maior)
-    drivers.sort(key=lambda x: (x.total_points, x.wins), reverse=True)
+    # NOVO DESEMPATE: Pontos > Vitórias > Pódios
+    drivers.sort(key=lambda x: (x.total_points, x.wins, x.podiums), reverse=True)
     
     for index, d in enumerate(drivers):
         d.position = index + 1
@@ -58,25 +69,31 @@ def calculate_standings(season, exclude_last_round=False):
             teams_dict[d.team_id] = {
                 'team': d.team,
                 'total_points': 0,
-                'wins': 0
+                'wins': 0,
+                'podiums': 0 # Inicializa o contador
             }
             
     for res in results:
         team_id = res.entry.team_id
         if team_id in teams_dict:
             teams_dict[team_id]['total_points'] += res.points
-            if res.position == 1 and res.status == 'COMPLETED':
-                teams_dict[team_id]['wins'] += 1
+            if res.status == 'COMPLETED':
+                if res.position == 1:
+                    teams_dict[team_id]['wins'] += 1
+                if res.position in [1, 2, 3]:
+                    teams_dict[team_id]['podiums'] += 1
                 
     teams_list = []
     for team_id, data in teams_dict.items():
         team_obj = data['team']
         team_obj.total_points = data['total_points']
         team_obj.wins = data['wins']
+        team_obj.podiums = data['podiums'] # Atribui o contador ao objeto
         teams_list.append(team_obj)
         
     teams_list.sort(key=lambda x: x.name.lower())
-    teams_list.sort(key=lambda x: (x.total_points, x.wins), reverse=True)
+    # NOVO DESEMPATE EQUIPES: Pontos > Vitórias > Pódios
+    teams_list.sort(key=lambda x: (x.total_points, x.wins, x.podiums), reverse=True)
     
     for index, t in enumerate(teams_list):
         t.position = index + 1
