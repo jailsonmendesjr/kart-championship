@@ -134,6 +134,16 @@ def season_detail(request, season_id):
 
     rounds_list = season.rounds.all().order_by('-order')
 
+    # NOVO: Descobre o vencedor de cada etapa para exibir no card do mobile
+    for r in rounds_list:
+        # Tenta achar o resultado de 1º lugar finalizado
+        winner_result = r.results.filter(position=1, status='COMPLETED').first()
+        if winner_result:
+            # Pega só o primeiro nome para não quebrar o layout no celular
+            r.winner = winner_result.entry.driver.name.split()[0]
+        else:
+            r.winner = None
+
     context = {
         'season': season,
         'drivers_ranking': current_drivers,
