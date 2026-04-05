@@ -78,7 +78,7 @@
                                                 {{ result.entry.driver.name }}
                                             </div>
                                             
-                                            <div class="mt-0.5 flex flex-wrap gap-1">
+                                            <div class="mt-0.5 flex flex-wrap gap-1 items-center">
                                                 {% if result.status == 'DNS' %}
                                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-800">
                                                         Não Participou
@@ -90,11 +90,20 @@
                                                 {% endif %}
 
                                                 {% if result.has_penalty %}
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-900 border border-amber-200" title="{{ result.penalty_reason|default:'Punição aplicada pela organização' }}">
+                                                    <button type="button" 
+                                                            onclick="document.getElementById('penalty-reason-{{ result.id }}').classList.toggle('hidden')"
+                                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-900 border border-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-400 active:bg-amber-200 transition-colors" 
+                                                            title="{{ result.penalty_reason|default:'Punição aplicada pela organização' }}">
                                                         ⚠️ Penalidade
-                                                    </span>
+                                                    </button>
                                                 {% endif %}
                                             </div>
+                                            
+                                            {% if result.has_penalty and result.penalty_reason %}
+                                                <div id="penalty-reason-{{ result.id }}" class="hidden mt-1.5 p-2 bg-amber-50 border border-amber-100 rounded text-[10px] text-amber-800 md:hidden whitespace-normal leading-tight max-w-[220px]">
+                                                    <span class="font-bold">Motivo:</span> {{ result.penalty_reason }}
+                                                </div>
+                                            {% endif %}
                                             
                                             <div class="text-xs text-gray-500 md:hidden flex items-center mt-1.5">
                                                 {{ result.entry.team.name }} • #{{ result.entry.car_number|default:"--" }}
