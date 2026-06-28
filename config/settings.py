@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 # Lê do ambiente ou usa um valor padrão inseguro (só pra dev)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-chave-padrao-dev')
+BACKUP_TOKEN = os.environ.get('BACKUP_TOKEN', 'chave-secreta-backup-pisafundo-2026')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # 3. Adicione o domínio de produção aqui. O domínio completo da VPS.

@@ -229,3 +229,31 @@ def performance_analysis(request, season_id):
         'selected_p2': int(p2_id) if p2_id else None,
     }
     return render(request, 'championship/performance.html', context)
+
+def download_backup_view(request):
+    from io import StringIO
+    from django.core.management import call_command
+    from django.conf import settings
+    from django.http import HttpResponse, Http404
+
+    token = request.GET.get('token')
+    expected_token = getattr(settings, 'BACKUP_TOKEN', 'chave-secreta-backup-pisafundo-2026')
+    
+    if not token or token != expected_token:
+        raise Http404("Página não encontrada")
+    
+    out = StringIO()
+    # Exporta os dados do app 'championship' e os usuários (auth.User)
+    call_command(
+        'dumpdata', 
+        'championship', 
+        'auth.User', 
+        indent=4, 
+        natural_foreign=True, 
+        natural_primary=True, 
+        stdout=out
+    )
+    
+    response = HttpResponse(out.getvalue(), content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename="championship_backup.json"'
+    return response
