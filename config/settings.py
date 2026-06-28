@@ -91,10 +91,18 @@ DATABASES = {
     }
 }
 
-# Se houver uma DATABASE_URL no ambiente (EasyPanel tem), use-a:
+# Se houver uma DATABASE_URL no ambiente, use-a:
+# ATENÇÃO: Para o Supabase na porta 6543 (PgBouncer), conn_max_age=0 é obrigatório.
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
-    DATABASES['default'] = dj_database_url.parse(database_url, conn_max_age=600)
+    DATABASES['default'] = dj_database_url.parse(
+        database_url,
+        conn_max_age=0,  # 0 = sem conexões persistentes (necessário para PgBouncer)
+    )
+    # Garante SSL para conexões com Supabase/PostgreSQL externo
+    DATABASES['default'].setdefault('OPTIONS', {})
+    if 'sslmode=disable' not in database_url:
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 
 
 # Password validation

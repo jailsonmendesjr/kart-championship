@@ -26,4 +26,4 @@ RUN python manage.py collectstatic --noinput
 
 # 8. Comando para iniciar o servidor (Gunicorn)
 # Substitua 'config' pelo nome da pasta onde está o seu settings.py
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--log-level", "debug", "--timeout", "60"]
