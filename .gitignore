@@ -9,6 +9,9 @@ venv/
 # Banco de Dados Local (Não sobe, pois usaremos Postgres na VPS)
 db.sqlite3
 
+# Backups de banco de dados
+championship_backup.json
+
 # VS Code / Mac
 .vscode/
 .DS_Store
