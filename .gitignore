@@ -16,5 +16,8 @@ championship_backup.json
 .vscode/
 .DS_Store
 
+# Agent Skills (instaladas localmente via npx skills add)
+.agents/
+
 # Static files coletados
 staticfiles/
